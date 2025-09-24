@@ -1,0 +1,55 @@
+#!/bin/bash
+
+#--------Générer les certifiats--------
+
+# Générer clé secrète r1
+pki --gen --type rsa --size 4096 --outform pem > pki/private/r1Key.pem
+
+# Générer certificat r1
+pki --pub --in pki/private/r1Key.pem --type rsa | pki --issue \
+--cacert pki/cacerts/ca-cert.pem --cakey pki/private/ca-key.pem \
+--lifetime 1825 --dn "CN=172.16.1.1" --san 172.16.1.1 \
+--san @172.16.1.1 --outform pem > pki/certs/r1.pem
+
+# Générer clé secrète r2
+pki --gen --type rsa --size 4096 --outform pem > pki/private/r2Key.pem
+
+# Générer certificat r2
+pki --pub --in pki/private/r2Key.pem --type rsa | pki --issue \
+--cacert pki/cacerts/ca-cert.pem --cakey pki/private/ca-key.pem \
+--lifetime 1825 --dn "CN=172.16.1.2" --san 172.16.1.2 \
+--san @172.16.1.2 --outform pem > pki/certs/r2.pem
+
+#--------Placer les éléments dans les répertoires--------
+
+ca_cert_pem="pki/cacerts/ca-cert.pem"
+
+private_key_r1="pki/private/r1Key.pem"
+private_key_r2="pki/private/r2Key.pem"
+
+r1_certificat="pki/certs/r1.pem"
+r2_certificat="pki/certs/r2.pem"
+
+# Placer le certificat de l'autorité dans les répertoires
+
+mkdir -p /etc/netns/r1/swanctl/x509ca/
+cp $ca_cert_pem /etc/netns/r1/swanctl/x509ca/
+
+mkdir -p /etc/netns/r2/swanctl/x509ca/
+cp $ca_cert_pem /etc/netns/r2/swanctl/x509ca/
+
+# Placer les clés secrètes dans les répertoires
+
+mkdir -p /etc/netns/r1/swanctl/private/
+cp $private_key_r1 /etc/netns/r1/swanctl/private/
+
+mkdir -p /etc/netns/r2/swanctl/private/
+cp $private_key_r2 /etc/netns/r2/swanctl/private/
+
+# Placer les certificats dans les répertoires
+
+mkdir -p /etc/netns/r1/swanctl/x509/
+cp $r1_certificat /etc/netns/r1/swanctl/x509/
+
+mkdir -p /etc/netns/r2/swanctl/x509/
+cp $r2_certificat /etc/netns/r2/swanctl/x509/

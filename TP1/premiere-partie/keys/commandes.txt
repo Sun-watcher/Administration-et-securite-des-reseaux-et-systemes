@@ -1,0 +1,2 @@
+# Générer clés
+xxd -p -l 32 -c 32 /dev/urandom

@@ -1,0 +1,44 @@
+#!/bin/bash
+
+# Configuration pour h1
+sudo ip netns exec h1 bash -c '
+    sudo killall charon
+    sudo killall starter
+    sleep 1
+    sudo mkdir -p /tmp/h1
+    sudo mount --bind /tmp/h1 /run
+    sudo ipsec start
+    sleep 3
+    sudo swanctl --load-creds
+    sudo swanctl --load-conns
+'
+
+# Configuration pour h2
+sudo ip netns exec h2 bash -c '
+    sudo mkdir -p /tmp/h2
+    sudo mount --bind /tmp/h2 /run
+    sudo ipsec start
+    sleep 3
+    sudo swanctl --load-creds
+    sudo swanctl --load-conns
+'
+
+# Configuration pour r1
+sudo ip netns exec r1 bash -c '
+    sudo mkdir -p /tmp/r1
+    sudo mount --bind /tmp/r1 /run
+    sudo ipsec start
+    sleep 3
+    sudo swanctl --load-creds
+    sudo swanctl --load-conns
+'
+
+# Configuration pour r2
+sudo ip netns exec r2 bash -c '
+    sudo mkdir -p /tmp/r2
+    sudo mount --bind /tmp/r2 /run
+    sudo ipsec start
+    sleep 3
+    sudo swanctl --load-creds
+    sudo swanctl --load-conns
+'

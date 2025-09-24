@@ -1,0 +1,45 @@
+#!/bin/bash
+
+# swanctl.conf de h1
+sudo tee /etc/netns/h1/swanctl/swanctl.conf > /dev/null <<'EOF'
+connections {
+    host-host {
+        remote_addrs = 10.0.0.1
+        local {
+            auth = pubkey
+            certs = h1.pem
+        }
+        remote {
+            auth = pubkey
+            id = "CN=10.0.0.1"
+        }
+        children {
+            net-net {
+                start_action = trap
+            }
+        }
+    }
+}
+EOF
+
+# swanctl.conf de h2
+sudo tee /etc/netns/h2/swanctl/swanctl.conf > /dev/null <<'EOF'
+connections {
+    host-host {
+        remote_addrs = 10.10.10.1
+        local {
+            auth = pubkey
+            certs = h2.pem
+        }
+        remote {
+            auth = pubkey
+            id = "CN=10.10.10.1"
+        }
+        children {
+            net-net {
+                start_action = trap
+            }
+        }
+    }
+}
+EOF

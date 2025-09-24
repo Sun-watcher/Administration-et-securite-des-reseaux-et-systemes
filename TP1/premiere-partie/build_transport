@@ -1,0 +1,47 @@
+#!/bin/bash
+
+NS_H1="h1"
+NS_H2="h2"
+
+IP_H1="10.10.10.1"
+IP_H2="10.0.0.1"
+
+# Fichier contenant les clés et identifiants
+
+KEYS_FILE="keys/"
+K1="$(<"${KEYS_FILE}key1.txt")"
+K2="$(<"${KEYS_FILE}key2.txt")"
+K3="$(<"${KEYS_FILE}key3.txt")"
+K4="$(<"${KEYS_FILE}key4.txt")"
+
+REQID_FILE="reqid/"
+Rid1="$(<"${REQID_FILE}reqid1.txt")"
+Rid2="$(<"${REQID_FILE}reqid2.txt")"
+
+SPI_FILE="spi/"
+SPI1="$(<"${SPI_FILE}spi1.txt")"
+SPI2="$(<"${SPI_FILE}spi2.txt")"
+
+# Flush des netns
+
+ip netns exec $NS_H1 ip xfrm state flush
+ip netns exec $NS_H1 ip xfrm policy flush
+ip netns exec $NS_H2 ip xfrm state flush
+ip netns exec $NS_H2 ip xfrm policy flush
+
+# Création du tunnel
+
+ip netns exec $NS_H1 ip xfrm state add src $IP_H1 dst $IP_H2 proto esp spi "$SPI1" reqid "$Rid1" mode transport auth sha256 "$K1" enc aes "$K2"
+ip netns exec $NS_H1 ip xfrm state add src $IP_H2 dst $IP_H1 proto esp spi "$SPI2" reqid "$Rid2" mode transport auth sha256 "$K3" enc aes "$K4"
+
+ip netns exec $NS_H2 ip xfrm state add src $IP_H1 dst $IP_H2 proto esp spi "$SPI1" reqid "$Rid1" mode transport auth sha256 "$K1" enc aes "$K2"
+ip netns exec $NS_H2 ip xfrm state add src $IP_H2 dst $IP_H1 proto esp spi "$SPI2" reqid "$Rid2" mode transport auth sha256 "$K3" enc aes "$K4"
+
+# Application des politiques IPsec
+
+ip netns exec $NS_H1 ip xfrm policy add src $IP_H2 dst $IP_H1 dir in tmpl src $IP_H2 dst $IP_H1 proto esp reqid $Rid2 mode transport
+ip netns exec $NS_H1 ip xfrm policy add src $IP_H1 dst $IP_H2 dir out tmpl src $IP_H1 dst $IP_H2 proto esp reqid $Rid1 mode transport
+    
+
+ip netns exec $NS_H2 ip xfrm policy add src $IP_H1 dst $IP_H2 dir in tmpl src $IP_H1 dst $IP_H2 proto esp reqid $Rid1 mode transport
+ip netns exec $NS_H2 ip xfrm policy add src $IP_H2 dst $IP_H1 dir out tmpl src $IP_H2 dst $IP_H1 proto esp reqid $Rid2 mode transport

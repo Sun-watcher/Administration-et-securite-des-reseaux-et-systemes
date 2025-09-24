@@ -1,0 +1,64 @@
+#!/bin/bash
+
+# swanctl.conf de h1
+sudo tee /etc/netns/h1/swanctl/swanctl.conf > /dev/null <<'EOF'
+connections {
+    home {
+        remote_addrs = 172.16.1.2
+
+        local {
+            auth = eap
+            id = h1
+        }
+        remote {
+            auth = pubkey
+            id = "CN=172.16.1.2"
+        }
+        children {
+            home {
+                local_ts  = 10.10.10.0/24
+                remote_ts = 10.0.0.0/24
+                start_action = trap
+            }
+        }
+    }
+}
+
+secrets {
+    eap-h1 {
+        id = h1
+        secret = JeSuisUnSecret
+    }
+}
+EOF
+
+# swanctl.conf de r2
+sudo tee /etc/netns/r2/swanctl/swanctl.conf > /dev/null <<'EOF'
+connections {
+    rw {
+        local {
+            auth = pubkey
+            certs = r2.pem
+            id = "CN=172.16.1.2"
+        }
+        remote {
+            auth = eap-md5
+            eap_id = %any
+        }
+        children {
+            net-net {
+                local_ts  = 10.0.0.0/24
+                remote_ts = 10.10.10.0/24
+            }
+        }
+        send_certreq = no
+    }
+}
+
+secrets {
+    eap-h1 {
+        id = h1
+        secret = JeSuisUnSecret
+    }
+}
+EOF

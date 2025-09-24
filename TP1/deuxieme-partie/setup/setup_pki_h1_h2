@@ -1,0 +1,61 @@
+#!/bin/bash
+
+#--------Générer les certifiats--------
+
+# Générer pki certificat autorité 
+mkdir -p pki/{cacerts,certs,private}
+pki --gen --type rsa --size 4096 --outform pem > pki/private/ca-key.pem
+pki --self --ca --lifetime 3650 --in pki/private/ca-key.pem \
+--type rsa --dn "CN=VPN root CA" --outform pem > pki/cacerts/ca-cert.pem
+
+# Générer clé secrète h1 
+pki --gen --type rsa --size 4096 --outform pem > pki/private/h1Key.pem
+
+# Générer certificat h1
+pki --pub --in pki/private/h1Key.pem --type rsa | pki --issue \
+--cacert pki/cacerts/ca-cert.pem --cakey pki/private/ca-key.pem \
+--lifetime 1825 --dn "CN=10.10.10.1" --san 10.10.10.1 \
+--san @10.10.10.1 --outform pem > pki/certs/h1.pem
+
+# Générer clé secrète h2
+pki --gen --type rsa --size 4096 --outform pem > pki/private/h2Key.pem
+
+# Générer certificat h2
+pki --pub --in pki/private/h2Key.pem --type rsa | pki --issue \
+--cacert pki/cacerts/ca-cert.pem --cakey pki/private/ca-key.pem \
+--lifetime 1825 --dn "CN=10.0.0.1" --san 10.0.0.1 \
+--san @10.0.0.1 --outform pem > pki/certs/h2.pem
+
+#--------Placer les éléments dans les répertoires--------
+
+ca_cert_pem="pki/cacerts/ca-cert.pem"
+
+private_key_h1="pki/private/h1Key.pem"
+private_key_h2="pki/private/h2Key.pem"
+
+h1_certificat="pki/certs/h1.pem"
+h2_certificat="pki/certs/h2.pem"
+
+# Placer le certificat de l'autorité dans les répertoires
+
+mkdir -p /etc/netns/h1/swanctl/x509ca/
+cp $ca_cert_pem /etc/netns/h1/swanctl/x509ca/
+
+mkdir -p /etc/netns/h2/swanctl/x509ca/
+cp $ca_cert_pem /etc/netns/h2/swanctl/x509ca/
+
+# Placer les clés secrètes dans les répertoires
+
+mkdir -p /etc/netns/h1/swanctl/private/
+cp $private_key_h1 /etc/netns/h1/swanctl/private/
+
+mkdir -p /etc/netns/h2/swanctl/private/
+cp $private_key_h2 /etc/netns/h2/swanctl/private/
+
+# Placer les certificats dans les répertoires
+
+mkdir -p /etc/netns/h1/swanctl/x509/
+cp $h1_certificat /etc/netns/h1/swanctl/x509/
+
+mkdir -p /etc/netns/h2/swanctl/x509/
+cp $h2_certificat /etc/netns/h2/swanctl/x509/
